@@ -1,0 +1,294 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>地图</title>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"/> 
+    <style>
+        html,body,#container{
+            margin:0;
+            height:100%;
+        }
+        .input-item-text{
+            width:7rem;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+
+<script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.15&key=222686c5697eb237142439956dfa3df5&plugin=AMap.DistrictSearch"></script>
+<script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+<script type="text/javascript">
+
+    //***************行政区
+
+    //初始化地图对象，加载地图
+    var map = new AMap.Map("container", {
+        resizeEnable: true,
+        center: [106.532428,29.566606],//地图中心点
+        zoom: 10 //地图显示的缩放级别
+    });
+
+    var district = null;
+    var polygons=[];
+    function drawBounds(value) {
+        //加载行政区划插件
+        if(!district){
+            //实例化DistrictSearch
+            var opts = {
+                subdistrict: 0,   //获取边界不需要返回下级行政区
+                extensions: 'all',  //返回行政区边界坐标组等具体信息
+                level: 'district'  //查询行政级别为 市
+            };
+            district = new AMap.DistrictSearch(opts);
+        }
+        //行政区查询
+        district.setLevel('district')
+        district.search(value, function(status, result) {
+            map.remove(polygons)//清除上次结果
+            polygons = [];
+            var bounds = result.districtList[0].boundaries;
+            if (bounds) {
+                for (var i = 0, l = bounds.length; i < l; i++) {
+                    //生成行政区划polygon
+                    var polygon = new AMap.Polygon({
+                        strokeWeight: 1,
+                        path: bounds[i],
+                        fillOpacity: 0.4,
+                        fillColor: '#80d8ff',
+                        strokeColor: '#0091ea'
+                    });
+                    polygons.push(polygon);
+                }
+            }
+            map.add(polygons)
+            // map.setFitView(polygons); // 视口自适应
+        });
+    }
+
+
+    //***************覆盖物
+    var lineArr = [
+        [106.569378,29.55256], //渝中区
+        [106.454708,29.54121], //沙坪坝区
+        [106.643192,29.501327], //南岸区
+        [106.509296,29.502821], //九龙坡区
+        [106.573498,29.607349], //重庆市江北区
+        [106.393725,29.805215], //北碚区
+        [106.537921,29.404028], //巴南区
+        [106.481616,29.486545], //大渡口区
+        [106.627185,29.716996], //渝北区
+    ];
+    var circle0 = new AMap.Circle({
+        map: map,
+        center: lineArr[0],          //设置线覆盖物路径
+        radius: 3000,
+        zIndex:100, // 层级
+        strokeColor: "#3366FF", //边框线颜色
+        strokeOpacity: 0.3,       //边框线透明度
+        strokeWeight: 3,        //边框线宽
+        fillColor: "#FFA500", //填充色
+        fillOpacity: 0.85,//填充透明度
+        extData:{
+            id: 0
+        }
+    });
+    var circle1 = new AMap.Circle({
+        map: map,
+        center: lineArr[1],          //设置线覆盖物路径
+        radius: 3000,
+        zIndex:100, // 层级
+        strokeColor: "#3366FF", //边框线颜色
+        strokeOpacity: 0.3,       //边框线透明度
+        strokeWeight: 3,        //边框线宽
+        fillColor: "#FFA500", //填充色
+        fillOpacity: 0.85,//填充透明度
+        extData:{
+            id: 1
+        }
+    });
+    var circle2 = new AMap.Circle({
+        map: map,
+        center: lineArr[2],          //设置线覆盖物路径
+        radius: 3000,
+        zIndex:100, // 层级
+        strokeColor: "#3366FF", //边框线颜色
+        strokeOpacity: 0.3,       //边框线透明度
+        strokeWeight: 3,        //边框线宽
+        fillColor: "#FFA500", //填充色
+        fillOpacity: 0.85,//填充透明度
+        extData:{
+            id: 2
+        }
+    });
+    var circle3 = new AMap.Circle({
+        map: map,
+        center: lineArr[3],          //设置线覆盖物路径
+        radius: 3000,
+        zIndex:100, // 层级
+        strokeColor: "#3366FF", //边框线颜色
+        strokeOpacity: 0.3,       //边框线透明度
+        strokeWeight: 3,        //边框线宽
+        fillColor: "#FFA500", //填充色
+        fillOpacity: 0.85,//填充透明度
+        extData:{
+            id: 3
+        }
+    });
+    var circle4 = new AMap.Circle({
+        map: map,
+        center: lineArr[4],          //设置线覆盖物路径
+        radius: 3000,
+        zIndex:100, // 层级
+        strokeColor: "#3366FF", //边框线颜色
+        strokeOpacity: 0.3,       //边框线透明度
+        strokeWeight: 3,        //边框线宽
+        fillColor: "#FFA500", //填充色
+        fillOpacity: 0.85,//填充透明度
+        extData:{
+            id: 4
+        }
+    });
+    var circle5 = new AMap.Circle({
+        map: map,
+        center: lineArr[5],          //设置线覆盖物路径
+        radius: 3000,
+        zIndex:100, // 层级
+        strokeColor: "#3366FF", //边框线颜色
+        strokeOpacity: 0.3,       //边框线透明度
+        strokeWeight: 3,        //边框线宽
+        fillColor: "#FFA500", //填充色
+        fillOpacity: 0.85,//填充透明度
+        extData:{
+            id: 5
+        }
+    });
+    var circle6 = new AMap.Circle({
+        map: map,
+        center: lineArr[6],          //设置线覆盖物路径
+        radius: 3000,
+        zIndex:100, // 层级
+        strokeColor: "#3366FF", //边框线颜色
+        strokeOpacity: 0.3,       //边框线透明度
+        strokeWeight: 3,        //边框线宽
+        fillColor: "#FFA500", //填充色
+        fillOpacity: 0.85,//填充透明度
+        extData:{
+            id: 6
+        }
+    });
+    var circle7 = new AMap.Circle({
+        map: map,
+        center: lineArr[7],          //设置线覆盖物路径
+        radius: 3000,
+        zIndex:100, // 层级
+        strokeColor: "#3366FF", //边框线颜色
+        strokeOpacity: 0.3,       //边框线透明度
+        strokeWeight: 3,        //边框线宽
+        fillColor: "#FFA500", //填充色
+        fillOpacity: 0.85,//填充透明度
+        extData:{
+            id: 7
+        }
+    });
+    var circle8 = new AMap.Circle({
+        map: map,
+        center: lineArr[8],          //设置线覆盖物路径
+        radius: 3000,
+        zIndex:100, // 层级
+        strokeColor: "#3366FF", //边框线颜色
+        strokeOpacity: 0.3,       //边框线透明度
+        strokeWeight: 3,        //边框线宽
+        fillColor: "#FFA500", //填充色
+        fillOpacity: 0.85,//填充透明度
+        extData:{
+            id: 8
+        }
+    });
+
+    function showInfoC(e){
+        console.log('您在 [ '+e.lnglat.getLng()+','+e.lnglat.getLat()+' ] 的位置点击了圆！');
+    }
+    function showInfoOver(e){
+        // console.log(e);
+        switch (e.target.B.extData.id) {
+            case 0:drawBounds('渝中区'); break;
+            case 1:drawBounds('沙坪坝区'); break;
+            case 2:drawBounds('南岸区'); break;
+            case 3:drawBounds('九龙坡区'); break;
+            case 4:drawBounds('500105'); break;
+            case 5:drawBounds('北碚区'); break;
+            case 6:drawBounds('巴南区'); break;
+            case 7:drawBounds('大渡口区'); break;
+            case 8:drawBounds('渝北区'); break;
+            default:break;
+        }
+    }
+    function showInfoOut(e){
+        map.remove(polygons)
+    }
+    
+    (function(){
+        circle0.on('click', showInfoC);
+        circle0.on('mouseover', showInfoOver);
+        circle0.on('mouseout', showInfoOut);
+        circle1.on('click', showInfoC);
+        circle1.on('mouseover', showInfoOver);
+        circle1.on('mouseout', showInfoOut);
+        circle2.on('click', showInfoC);
+        circle2.on('mouseover', showInfoOver);
+        circle2.on('mouseout', showInfoOut);
+        circle3.on('click', showInfoC);
+        circle3.on('mouseover', showInfoOver);
+        circle3.on('mouseout', showInfoOut);
+        circle4.on('click', showInfoC);
+        circle4.on('mouseover', showInfoOver);
+        circle4.on('mouseout', showInfoOut);
+        circle5.on('click', showInfoC);
+        circle5.on('mouseover', showInfoOver);
+        circle5.on('mouseout', showInfoOut);
+        circle6.on('click', showInfoC);
+        circle6.on('mouseover', showInfoOver);
+        circle6.on('mouseout', showInfoOut);
+        circle7.on('click', showInfoC);
+        circle7.on('mouseover', showInfoOver);
+        circle7.on('mouseout', showInfoOut);
+        circle8.on('click', showInfoC);
+        circle8.on('mouseover', showInfoOver);
+        circle8.on('mouseout', showInfoOut);
+    })()
+    (function(){
+        circle0.off('click', showInfoC);
+        circle0.off('mouseover', showInfoOver);
+        circle0.off('mouseout', showInfoOut);
+        circle1.off('click', showInfoC);
+        circle1.off('mouseover', showInfoOver);
+        circle1.off('mouseout', showInfoOut);
+        circle2.off('click', showInfoC);
+        circle2.off('mouseover', showInfoOver);
+        circle2.off('mouseout', showInfoOut);
+        circle3.off('click', showInfoC);
+        circle3.off('mouseover', showInfoOver);
+        circle3.off('mouseout', showInfoOut);
+        circle4.off('click', showInfoC);
+        circle4.off('mouseover', showInfoOver);
+        circle4.off('mouseout', showInfoOut);
+        circle5.off('click', showInfoC);
+        circle5.off('mouseover', showInfoOver);
+        circle5.off('mouseout', showInfoOut);
+        circle6.off('click', showInfoC);
+        circle6.off('mouseover', showInfoOver);
+        circle6.off('mouseout', showInfoOut);
+        circle7.off('click', showInfoC);
+        circle7.off('mouseover', showInfoOver);
+        circle7.off('mouseout', showInfoOut);
+        circle8.off('click', showInfoC);
+        circle8.off('mouseover', showInfoOver);
+        circle8.off('mouseout', showInfoOut);
+    })()
+</script>
+</body>
+</html>
