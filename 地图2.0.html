@@ -2,172 +2,522 @@
 <html>
 
 <head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
-	<title>地图2.0</title>
-	<link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
-	<style>
-		html,
-		body,
-		#container {
-			margin: 0;
-			height: 100%;
-		}
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <title>地图2.0</title>
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <style>
+    html,
+    body,
+    #container {
+      margin: 0;
+      height: 100%;
+    }
 
-		.custom-content-marker {
-			position: relative;
-			width: 60px;
-			height: 60px;
-			border-radius: 50%;
-			background-color: rgba(0, 167, 91, 0.9);
-			color: white;
-			text-align: center;
-			line-height: 60px;
-		}
-	</style>
+    #left {
+      width: 80px;
+      height: 100%;
+      background-color: rgb(255, 255, 255, 0.9);
+      position: fixed;
+      left: 0;
+      top: 0;
+    }
+
+    .custom-content-marker {
+      position: relative;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: rgba(0, 167, 91, 0.9);
+      color: white;
+      text-align: center;
+      line-height: 60px;
+    }
+  </style>
 </head>
 
 <body>
-	<div id="container"></div>
+  <div id="container"></div>
+  <div id="left">
+    <button id='0'>居民</button>
+    <button id='1'>商圈</button>
+    <button id='2'>板块</button>
+  </div>
 
-	<script type="text/javascript"
-		src="https://webapi.amap.com/maps?v=1.4.15&key=222686c5697eb237142439956dfa3df5&plugin=AMap.DistrictSearch"></script>
-	<script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
-	<script type="text/javascript">
+  <script type="text/javascript"
+    src="https://webapi.amap.com/maps?v=1.4.15&key=222686c5697eb237142439956dfa3df5&plugin=AMap.DistrictSearch"></script>
+  <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+  <script type="text/javascript">
 
-		//**************************************************行政区
-		//初始化地图对象，加载地图
-		var map = new AMap.Map("container", {
-			resizeEnable: true,
-			features: ['bg', 'building', 'road'],
-			center: [106.532428, 29.566606],//地图中心点
-			zoom: 10, //地图显示的缩放级别
-			isHotspot: false,
-		});
+    //**************************************************左侧按钮
+    // 当前用户选择了什么按钮：居民:0 商圈:1 板块:2
+    var buttonState = 0
+    // 当前地图处于那一层：行政区:0 板块或商圈:1 小区:3
+    var nowMapState = 0
+    // 按钮事件
+    document.getElementById('left').onclick = function (e) {
+      if (e.target.id === '0') {
+        buttonState = 0;
+        e.target.style.color = 'red'
+      }
+      if (e.target.id === '1') {
+        buttonState = 1;
+        e.target.style.color = 'red'
+      }
+      if (e.target.id === '2') {
+        buttonState = 2;
+        e.target.style.color = 'red'
+      }
+    }
 
-		var district = null;
-		var polygons = [];
-		function drawBounds(value) {
-			//加载行政区划插件
-			if (!district) {
-				//实例化DistrictSearch
-				var opts = {
-					subdistrict: 0,   //获取边界不需要返回下级行政区
-					extensions: 'all',  //返回行政区边界坐标组等具体信息
-					level: 'district'  //查询行政级别为 市
-				};
-				district = new AMap.DistrictSearch(opts);
-			}
-			//行政区查询
-			district.setLevel('district')
-			district.search(value, function (status, result) {
-				map.remove(polygons)//清除上次结果
-				polygons = [];
-				var bounds = result.districtList[0].boundaries;
-				if (bounds) {
-					for (var i = 0, l = bounds.length; i < l; i++) {
-						//生成行政区划polygon
-						var polygon = new AMap.Polygon({
-							strokeWeight: 1,
-							path: bounds[i],
-							fillOpacity: 0.4,
-							fillColor: '#80d8ff',
-							strokeColor: '#0091ea'
-						});
-						polygons.push(polygon);
-					}
-				}
-				map.add(polygons)
-			});
-		}
+    //**************************************************行政区
+    //初始化地图对象,加载地图
+    var center = [106.532428, 29.566606]; //地图中心点（解放碑附近）
+    var map = new AMap.Map("container", {
+      resizeEnable: true,
+      features: ['bg', 'building', 'road'],
+      center: center,
+      zoom: 11, //地图显示的缩放级别
+      isHotspot: false,
+    });
 
-		//**************************************************覆盖物
-		var lineArr = [
-			[106.569378, 29.55256], //渝中区
-			[106.454708, 29.54121], //沙坪坝区
-			[106.643192, 29.501327], //南岸区
-			[106.509296, 29.502821], //九龙坡区
-			[106.573498, 29.607349], //江北区
-			[106.393725, 29.805215], //北碚区
-			[106.537921, 29.404028], //巴南区
-			[106.481616, 29.486545], //大渡口区
-			[106.627185, 29.716996], //渝北区
-		];
-		var nameArr = [
-			'渝中区',
-			'沙坪坝区',
-			'南岸区',
-			'九龙坡区',
-			'江北区',
-			'北碚区',
-			'巴南区',
-			'大渡口区',
-			'渝北区'
-		];
-		var adcodeArr = [ // 行政区对应的adcode
+    var district = null;
+    var polygons = [];
+    function drawBounds(value) {
+      //加载行政区划插件
+      if (!district) {
+        //实例化DistrictSearch
+        var opts = {
+          subdistrict: 0,   //获取边界不需要返回下级行政区
+          extensions: 'all',  //返回行政区边界坐标组等具体信息
+          level: 'district'  //查询行政级别为 市
+        };
+        district = new AMap.DistrictSearch(opts);
+      }
+      //行政区查询
+      district.setLevel('district')
+      district.search(value, function (status, result) {
+        // console.log(result);
+        map.remove(polygons)//清除上次结果
+        polygons = [];
+        var bounds = result.districtList[0].boundaries;
+        if (bounds) {
+          for (var i = 0, l = bounds.length; i < l; i++) {
+            //生成行政区划polygon
+            var polygon = new AMap.Polygon({
+              strokeWeight: 1,
+              path: bounds[i],
+              fillOpacity: 0.4,
+              fillColor: '#80d8ff',
+              strokeColor: '#0091ea'
+            });
+            polygons.push(polygon);
+          }
+        }
+        map.add(polygons)
+      });
+    }
 
-		]
-		// 点标记显示内容，HTML要素字符串
-		var markerList = [];
-		var marker;
-		for (let i = 0; i < lineArr.length; i++) {
-			marker = new AMap.Marker(
-				{
-					map: map,
-					zIndex: 100, // 层级
-					extData: {
-						id: i
-					},
-					position: lineArr[i],
-					content: `<div class="custom-content-marker">${nameArr[i]}</div>`,
-					offset: new AMap.Pixel(-13, -30)
-				}
-			);
-			markerList.push(marker);
-		}
+    //**************************************************覆盖物
+    // 行政区
+    var cantonArr = [
+      {
+        lnglat: [106.569378, 29.55256],
+        name: '渝中区',
+        adcode: "500103"
+      },
+      {
+        lnglat: [106.454708, 29.54121],
+        name: '沙坪坝区',
+        adcode: "500106"
+      },
+      {
+        lnglat: [106.643192, 29.501327],
+        name: '南岸区',
+        adcode: "500108"
+      },
+      {
+        lnglat: [106.509296, 29.502821],
+        name: '九龙坡区',
+        adcode: "500107"
+      },
+      {
+        lnglat: [106.573498, 29.607349],
+        name: '江北区',
+        adcode: "500105"
+      },
+      {
+        lnglat: [106.393725, 29.805215],
+        name: '北碚区',
+        adcode: "500109"
+      },
+      {
+        lnglat: [106.537921, 29.404028],
+        name: '巴南区',
+        adcode: "500113"
+      },
+      {
+        lnglat: [106.481616, 29.486545],
+        name: '大渡口区',
+        adcode: "500104"
+      },
+      {
+        lnglat: [106.627185, 29.716996],
+        name: '渝北区',
+        adcode: "500112"
+      },
+    ];
+    var markerList = []; // 覆盖物数组
+    var marker; // 中间变量
+    addMarker(cantonArr)
 
-		function showInfoC(e) {
-			switch (e.target.B.extData.id) {
-				case 0: map.setFitView(markerList[0], true, [0, 0, 0, 0], 13); break;
-				case 1: map.setFitView(markerList[1], true, [0, 0, 0, 0], 13); break;
-				case 2: map.setFitView(markerList[2], true, [0, 0, 0, 0], 13); break;
-				case 3: map.setFitView(markerList[3], true, [0, 0, 0, 0], 13); break;
-				case 4: map.setFitView(markerList[4], true, [0, 0, 0, 0], 13); break;
-				case 5: map.setFitView(markerList[5], true, [0, 0, 0, 0], 13); break;
-				case 6: map.setFitView(markerList[6], true, [0, 0, 0, 0], 13); break;
-				case 7: map.setFitView(markerList[7], true, [0, 0, 0, 0], 13); break;
-				case 8: map.setFitView(markerList[8], true, [0, 0, 0, 0], 13); break;
-				default: break;
-			}
-		}
-		function showInfoOver(e) {
-			// console.log(e);
-			switch (e.target.B.extData.id) {
-				case 0: drawBounds('渝中区'); break;
-				case 1: drawBounds('沙坪坝区'); break;
-				case 2: drawBounds('南岸区'); break;
-				case 3: drawBounds('九龙坡区'); break;
-				case 4: drawBounds('500105'); break;
-				case 5: drawBounds('北碚区'); break;
-				case 6: drawBounds('巴南区'); break;
-				case 7: drawBounds('大渡口区'); break;
-				case 8: drawBounds('渝北区'); break;
-				default: break;
-			}
-		}
-		function showInfoOut(e) {
-			map.remove(polygons)
-		}
-		(function () {
-			for (let i = 0; i < lineArr.length; i++) {
-				markerList[i].on('click', showInfoC);
-				markerList[i].on('mouseover', showInfoOver);
-				markerList[i].on('mouseout', showInfoOut);
-			}
-		})();
-		
-	</script>
+    // 板块
+    var estateArr = [{
+      estateArr: [{
+        lnglat: [106.584385, 29.570546], // 代表点
+        lnglatRange: [[106.584385, 29.570546], [106.595668, 29.56351], [106.595021, 29.576075], [106.584385, 29.570546]], // 范围
+        name: '朝天门'
+      }],
+      name: '渝中区'
+    }, {
+      estateArr: [{
+        lnglat: [106.313191,29.642153],
+        lnglatRange: [[106.313191,29.642153], [106.322863,29.645264], [106.341404,29.642753], [106.339679,29.63974], [106.336948,29.630447], [106.337308,29.605203],[106.334721,29.585669],[106.285278,29.585857],[106.284559,29.592013],[106.297279,29.622598]],
+        name: '大学城西'
+      },{
+        lnglat: [106.399677, 29.671605],
+        lnglatRange: [[106.399677, 29.671605], [106.355625, 29.673927], [106.352606, 29.656478], [106.357206, 29.630613], [106.399103, 29.630864], [106.399677, 29.671605]],
+        name: '万达文旅城+土主+物流园'
+      },{
+        lnglat: [106.316589,29.61571],
+        lnglatRange: [[106.316589,29.61571], [106.316697,29.614768], [106.319644,29.614831], [106.31844,29.617452], [106.314721,29.618379], [106.314362,29.61819],[106.314434,29.61582]],
+        name: '富力城A区'
+      },{
+        lnglat: [106.322826,29.620488],
+        lnglatRange: [[106.322826,29.620488], [106.325323,29.620456], [106.325296,29.619137], [106.327497,29.619114], [106.32729,29.617497], [106.322898,29.617575]],
+        name: '龙湖花千树'
+      },{
+        lnglat: [106.294195,29.609045],
+        lnglatRange: [[106.294195,29.609045], [106.296207,29.613269], [106.293512,29.613174], [106.291769,29.609029]],
+        name: '龙湖听蓝湾2期'
+      },{
+        lnglat: [106.307499, 29.613535],
+        lnglatRange: [[106.307499, 29.613535], [106.310625, 29.613567], [106.310517, 29.607004], [106.313643, 29.607067], [106.313463, 29.6049], [106.313463, 29.6049]],
+        name: '熙街'
+      }],
+      name: '沙坪坝区'
+    }, {
+      estateArr: [{
+        lnglat: [106.659213, 29.531786],
+        lnglatRange: [[106.659213, 29.531786], [106.682784, 29.519466], [106.67531, 29.5079], [106.670423, 29.503373], [106.649439, 29.513683], [106.653176, 29.522232], [106.659213, 29.531786]],
+        name: '茶园南'
+      }],
+      name: '南岸区'
+    }, {
+      estateArr: [{
+        lnglat: [106.293604, 29.561709],
+        lnglatRange: [[106.293604, 29.561709], [106.394214, 29.565228], [106.390765, 29.505899], [106.384441, 29.45358], [106.344772, 29.459618], [106.312002, 29.452071], [106.299353, 29.510928], [106.293604, 29.561709]],
+        name: '白市驿'
+      }],
+      name: '九龙坡区'
+    }, {
+      estateArr: [{
+        lnglat: [106.566994, 29.592659],
+        lnglatRange: [[106.566994, 29.592659], [106.582732, 29.591465], [106.591212, 29.57463], [106.591212, 29.57463], [106.566994, 29.592659]],
+        name: '江北嘴'
+      }],
+      name: '江北区'
+    }, {
+      estateArr: [{
+        lnglat: [106.495252, 29.786428],
+        lnglatRange: [[106.495252, 29.786428], [106.459032, 29.750813], [106.528022, 29.719201], [106.543545, 29.731245], [106.525148, 29.767117], [106.495252, 29.786428]],
+        name: '蔡家北'
+      }],
+      name: '北碚区'
+    }, {
+      estateArr: [{
+        lnglat: [106.546882, 29.392416],
+        lnglatRange: [[106.546882, 29.392416], [106.600062, 29.384612], [106.601499, 29.376051], [106.591438, 29.350365], [106.538546, 29.341046], [106.541995, 29.369756], [106.546882, 29.392416]],
+        name: '龙洲湾南'
+      }],
+      name: '巴南区'
+    }, {
+      estateArr: [{
+        lnglat: [106.389068, 29.379325],
+        lnglatRange: [[106.389068, 29.379325], [106.42155, 29.40601], [106.437361, 29.415575], [106.476167, 29.419099], [106.498877, 29.417337], [106.505201, 29.410289], [106.479904, 29.404248], [106.446847, 29.375296], [106.430174, 29.354647], [106.389643, 29.341298], [106.389068, 29.379325], [106.389068, 29.379325]],
+        name: '跳蹬'
+      }],
+      name: '大渡口区'
+    }, {
+      estateArr: [{
+        lnglat: [106.604759, 29.706316],
+        lnglatRange: [[106.604759, 29.706316], [106.627037, 29.698661], [106.605621, 29.669919], [106.573713, 29.684103], [106.604759, 29.706316]],
+        name: '回兴'
+      }],
+      name: '渝北区'
+    }];
+
+    // 商圈
+    var commercialArr = [{
+      commercialArr: [{
+        lnglat: [106.307499, 29.613535], // 代表点
+        lnglatRange: [[106.307499, 29.613535], [106.310625, 29.613567], [106.310517, 29.607004], [106.313643, 29.607067], [106.313463, 29.6049], [106.313463, 29.6049]], // 范围
+        name: '熙街'
+      }],
+      name: '渝中区'
+    }, {
+      commercialArr: [{
+        lnglat: [106.307499, 29.613535],
+        lnglatRange: [[106.307499, 29.613535], [106.310625, 29.613567], [106.310517, 29.607004], [106.313643, 29.607067], [106.313463, 29.6049], [106.313463, 29.6049]],
+        name: '熙街'
+      }],
+      name: '沙坪坝区'
+    }, {
+      commercialArr: [{
+        lnglat: [106.307499, 29.613535],
+        lnglatRange: [[106.307499, 29.613535], [106.310625, 29.613567], [106.310517, 29.607004], [106.313643, 29.607067], [106.313463, 29.6049], [106.313463, 29.6049]],
+        name: '熙街'
+      }],
+      name: '南岸区'
+    }, {
+      commercialArr: [{
+        lnglat: [106.307499, 29.613535],
+        lnglatRange: [[106.307499, 29.613535], [106.310625, 29.613567], [106.310517, 29.607004], [106.313643, 29.607067], [106.313463, 29.6049], [106.313463, 29.6049]],
+        name: '熙街'
+      }],
+      name: '九龙坡区'
+    }, {
+      commercialArr: [{
+        lnglat: [106.54107,29.585579],
+        lnglatRange: [[106.54107,29.585579], [106.541568,29.584382], [106.541568,29.584382], [106.538905,29.583691]],
+        name: '北城天街'
+      }],
+      name: '江北区'
+    }, {
+      commercialArr: [{
+        lnglat: [106.307499, 29.613535],
+        lnglatRange: [[106.307499, 29.613535], [106.310625, 29.613567], [106.310517, 29.607004], [106.313643, 29.607067], [106.313463, 29.6049], [106.313463, 29.6049]],
+        name: '熙街'
+      }],
+      name: '北碚区'
+    }, {
+      commercialArr: [{
+        lnglat: [106.307499, 29.613535],
+        lnglatRange: [[106.307499, 29.613535], [106.310625, 29.613567], [106.310517, 29.607004], [106.313643, 29.607067], [106.313463, 29.6049], [106.313463, 29.6049]],
+        name: '熙街'
+      }],
+      name: '巴南区'
+    }, {
+      commercialArr: [{
+        lnglat: [106.307499, 29.613535],
+        lnglatRange: [[106.307499, 29.613535], [106.310625, 29.613567], [106.310517, 29.607004], [106.313643, 29.607067], [106.313463, 29.6049], [106.313463, 29.6049]],
+        name: '熙街'
+      }],
+      name: '大渡口区'
+    }, {
+      commercialArr: [{
+        lnglat: [106.307499, 29.613535],
+        lnglatRange: [[106.307499, 29.613535], [106.310625, 29.613567], [106.310517, 29.607004], [106.313643, 29.607067], [106.313463, 29.6049], [106.313463, 29.6049]],
+        name: '熙街'
+      }],
+      name: '渝北区'
+    }];
+
+    // 小区
+    var houseArr = [{
+      houseArr: [{
+        lnglat: [106.309123,29.601514],
+        name: '富力城倾城里'
+      },{
+        lnglat: [106.287236,29.605096],
+        name: '龙湖U城听蓝湾2期'
+      },{
+        lnglat: [106.31762,29.612708],
+        name: '龙湖·花千树2期'
+      }],
+      name: '大学城西'
+    }];
+
+    // 鼠标点击覆盖物
+    function showInfoC(e) {
+      console.log(e);
+      if (nowMapState === 0 || (nowMapState === 1 && buttonState === 0)) {
+        var id = e.target.B.extData.id;
+        var name = e.target.B.extData.name;
+        if(nowMapState === 0){
+          map.setFitView(markerList[id], true, [0, 0, 0, 0], 12);
+        }else if(nowMapState === 1 && buttonState === 0){
+          map.setFitView(markerList[id], true, [0, 0, 0, 0], 13);
+        }
+        updateMarker(id, name, nowMapState, buttonState);
+        nowMapState++;
+      } else {
+        // ...跳转
+      }
+    }
+    // 鼠标进入覆盖物
+    function showInfoOver(e) {
+      // 地图处于“行政区”层
+      if (nowMapState === 0) {
+        switch (e.target.B.extData.id) {
+          case 0: drawBounds('500103'); break;
+          case 1: drawBounds('500106'); break;
+          case 2: drawBounds('500108'); break;
+          case 3: drawBounds('500107'); break;
+          case 4: drawBounds('500105'); break;
+          case 5: drawBounds('500109'); break;
+          case 6: drawBounds('500113'); break;
+          case 7: drawBounds('500104'); break;
+          case 8: drawBounds('500112'); break;
+          default: break;
+        }
+      }
+      // 地图进入“板块或商圈”、且按钮状态为“居民”
+      else if (nowMapState === 1 && buttonState === 0) {
+        var polygon = new AMap.Polygon({
+          map: map,
+          path: e.target.B.extData.lnglatRange, //设置多边形边界路径
+          strokeWeight: 1,
+          strokeColor: "#0091ea",
+          fillColor: "#80d8ff",
+          fillOpacity: 0.4 //填充透明度
+        });
+        polygons.push(polygon);
+      }
+      // 地图进入“板块或商圈”、且按钮状态为“板块”
+      else if (nowMapState === 1 && buttonState === 2) {
+        var polygon = new AMap.Polygon({
+          map: map,
+          path: e.target.B.extData.lnglatRange, //设置多边形边界路径
+          strokeWeight: 1,
+          strokeColor: "#0091ea",
+          fillColor: "#80d8ff",
+          fillOpacity: 0.4 //填充透明度
+        });
+        polygons.push(polygon);
+      }
+      // 地图进入“板块或商圈”、且按钮状态为“商圈”
+      else if (nowMapState === 1 && buttonState === 1) {
+        var polygon = new AMap.Polygon({
+          map: map,
+          path: e.target.B.extData.lnglatRange, //设置多边形边界路径
+          strokeWeight: 1,
+          strokeColor: "#0091ea",
+          fillColor: "#80d8ff",
+          fillOpacity: 0.4 //填充透明度
+        });
+        polygons.push(polygon);
+      }
+      else if (nowMapState === 2) {
+        // 地图进入“小区”
+      }
+    }
+    // 鼠标移出覆盖物
+    function showInfoOut(e) {
+      map.remove(polygons)
+    }
+
+    // 添加覆盖物
+    function addMarker(arr,val) {
+      markerList = []
+      if(val === '小区'){
+        for (let i = 0; i < arr.length; i++) {
+          marker = new AMap.Marker(
+          {
+            map: map,
+            zIndex: 100, // 层级
+            extData: { // 携带数据
+              id: i,
+              lnglatRange: arr[i].lnglatRange,
+              name: arr[i].name
+            },
+            position: arr[i].lnglat,
+            label: {
+              content: `<div style="background-color: white;">${arr[i].name}</div>`,
+              offset: new AMap.Pixel(5, 0),
+              direction:'right'
+            },
+            offset: new AMap.Pixel(-13, -30)
+          });
+          markerList.push(marker);
+        }
+      }else{
+        for (let i = 0; i < arr.length; i++) {
+          marker = new AMap.Marker(
+          {
+            map: map,
+            zIndex: 100, // 层级
+            extData: { // 携带数据
+              id: i,
+              lnglatRange: arr[i].lnglatRange,
+              name: arr[i].name
+            },
+            position: arr[i].lnglat,
+            content: `<div class="custom-content-marker">${arr[i].name}</div>`,
+            offset: new AMap.Pixel(-13, -30)
+          });
+          markerList.push(marker);
+        }
+      }
+    }
+
+    //**************************************************更换覆盖物
+    function updateMarker(id, name, nowMapState, buttonState) {
+      // 删除原有覆盖物
+      map.remove(markerList)
+      map.remove(polygons)
+      // 添加新的覆盖物
+      if (nowMapState === 0 && buttonState === 0) {
+        addMarker(estateArr[id].estateArr)
+      }
+      else if (nowMapState === 0 && buttonState === 1) {
+        addMarker(commercialArr[id].commercialArr)
+      }
+      else if (nowMapState === 0 && buttonState === 2) {
+        addMarker(estateArr[id].estateArr)
+      }
+      else if (nowMapState === 1 && buttonState === 0) {
+        // ...添加小区覆盖物
+        for(let i=0; i<houseArr.length; i++){
+          if(houseArr[i].name === houseArr[id].name){
+            addMarker(houseArr[i].houseArr,'小区');
+          }
+        }
+      }
+      Event();
+    }
+
+    //**************************************************地图缩放
+    function mapScaling() {
+      // 方案一：获取当前地图范围
+      // var bounds = map.getBounds();
+      // var northEast = bounds.northeast.toString();
+      // var southWest = bounds.southwest.toString();
+      // if(true){
+      // 	var mybounds = new AMap.Bounds([106.029117, 29.277133], [107.035739,29.855252]);
+      // 	map.setBounds(mybounds);
+      // }
+      // 方案二：获取当前地图缩放级别
+      if (map.getZoom() < 11) {
+        map.setZoom(11);
+        map.setCenter(center);
+      }
+    }
+
+    //**************************************************绑定事件
+    function Event() {
+      // 给覆盖物绑定
+      for (let i = 0; i < markerList.length; i++) {
+        markerList[i].on('click', showInfoC);
+        markerList[i].on('mouseover', showInfoOver);
+        markerList[i].on('mouseout', showInfoOut);
+      }
+      // 给地图绑定缩放事件
+      map.on('zoomend', mapScaling);
+    }
+    Event();
+  </script>
 </body>
 
 </html>
